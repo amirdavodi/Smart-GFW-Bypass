@@ -1,83 +1,84 @@
+#!/usr/bin/python3
 import os
 import subprocess
 import uuid
 import json
 import random
 import sys
+import urllib.parse
 
-def print_farsi(text):
-    print(f"\n[+] {text}")
+# Function to print colored and Persian text
+def print_status(text):
+    print(f"\n\033[1;34m[+]\033[0m \033[1;32m{text}\033[0m")
 
-def run_command(command):
+def run_cmd(command):
     return subprocess.check_output(command, shell=True).decode('utf-8').strip()
 
-def setup():
+def main():
     if os.geteuid() != 0:
-        print("لطفاً اسکریپت را با دسترسی root (sudo) اجرا کنید.")
+        print("خطا: لطفاً اسکریپت را با sudo اجرا کنید.")
         sys.exit(1)
 
     os.system('clear')
-    print("==============================================")
-    print("   Ghost-Net v1.0: Advanced GFW Bypass      ")
-    print("   طراحی شده برای عبور از فیلترینگ هوشمند   ")
-    print("==============================================")
+    print("""
+    ==============================================
+       Ghost-Net v1.0 | Smart-GFW-Bypass
+       طراحی شده برای عبور از فیلترینگ لایه ۷
+    ==============================================
+    """)
 
-    # مرحله ۱: اطلاعات ورود
-    admin_user = input("نام کاربری پنل مدیریت: ")
-    admin_pass = input("رمز عبور پنل مدیریت: ")
+    # دریافت اطلاعات از کاربر
+    admin_user = input("نام کاربری برای پنل مدیریت: ")
+    admin_pass = input("رمز عبور برای پنل مدیریت: ")
     
-    # مرحله ۲: انتخاب پورت استراتژیک
-    print_farsi("انتخاب پورت غیرقابل مسدودسازی (Stealth Port):")
-    print("1. پورت 443 (استاندارد HTTPS - پیشنهاد اول)")
+    print_status("انتخاب پورت استراتژیک (غیرقابل مسدودسازی):")
+    print("1. پورت 443 (استاندارد وب)")
     print("2. پورت 123 (NTP - حیاتی)")
-    print("3. پورت 3478 (STUN - ویدیو کنفرانس)")
-    port_choice = input("گزینه (1-3): ")
+    print("3. پورت 3478 (STUN - تماس تصویری)")
+    p_choice = input("انتخاب (1-3): ")
     ports = {"1": "443", "2": "123", "3": "3478"}
-    final_port = ports.get(port_choice, "443")
+    target_port = ports.get(p_choice, "443")
 
-    # مرحله ۳: نصب هسته Xray (برای تولید کلیدها الزامی است)
-    print_farsi("در حال نصب هسته Xray...")
+    # نصب پیش‌نیازها و هسته
+    print_status("در حال نصب هسته Xray...")
     os.system('bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)"')
 
-    # مرحله ۴: تولید پارامترهای Reality
-    print_farsi("در حال تولید کلیدهای اختصاصی ضد‌شناسایی...")
-    key_output = run_command("xray x25519")
-    priv_key = key_output.splitlines()[0].split(": ")[1]
-    pub_key = key_output.splitlines()[1].split(": ")[1]
+    # تولید پارامترهای Reality
+    print_status("در حال تولید کلیدهای اختصاصی ضد‌شناسایی...")
+    key_data = run_cmd("xray x25519")
+    priv_key = key_data.splitlines()[0].split(": ")[1]
+    pub_key = key_data.splitlines()[1].split(": ")[1]
     u_id = str(uuid.uuid4())
-    short_id = os.urandom(4).hex()
-    server_ip = run_command("curl -s ifconfig.me")
+    s_id = os.urandom(4).hex()
+    ip = run_cmd("curl -s ifconfig.me")
 
-    # مرحله ۵: بهینه‌سازی TCP BBR
-    print_farsi("بهینه‌سازی شبکه (BBR)...")
-    with open("/etc/sysctl.conf", "a") as f:
-        f.write("\nnet.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n")
+    # بهینه‌سازی شبکه BBR
+    print_status("فعال‌سازی BBR برای پایداری در شبکه ایران...")
+    os.system('echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf')
+    os.system('echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf')
     os.system("sysctl -p")
 
-    # مرحله ۶: نصب پنل x-ui (نسخه Sanaei)
-    print_farsi("در حال نصب پنل مدیریت...")
-    # نصب با تنظیمات خودکار یوزر و پسورد
+    # نصب پنل Sanaei x-ui
+    print_status("در حال نصب پنل x-ui...")
     os.system(f'bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) <<EOF\ny\n{admin_user}\n{admin_pass}\n2053\nEOF')
+
+    # ساخت لینک VLESS هوشمند
+    tag = urllib.parse.quote(f"Ghost-Net-{ip}")
+    vless_link = f"vless://{u_id}@{ip}:{target_port}?security=reality&encryption=none&pbk={pub_key}&headerType=none&fp=chrome&spx=%2F&type=tcp&sni=www.microsoft.com&sid={s_id}&flow=xtls-rprx-vision#{tag}"
 
     os.system('clear')
     print("==============================================")
-    print("✅ تبریک! سیستم با موفقیت راه‌اندازی شد.")
-    print("==============================================")
-    print(f"آدرس پنل: http://{server_ip}:2053")
+    print("✅ نصب و پیکربندی با موفقیت انجام شد!")
+    print(f"آدرس پنل شما: http://{ip}:2053")
     print(f"یوزر: {admin_user} | پسورد: {admin_pass}")
-    print("\n🚀 اطلاعات لازم برای ساخت Inbound در پنل:")
-    print(f"- پروتکل: vless")
-    print(f"- پورت: {final_port}")
-    print(f"- آی‌دی (UUID): {u_id}")
-    print(f"- جریان (Flow): xtls-rprx-vision")
-    print(f"- شبکه: tcp")
-    print(f"- امنیت: reality")
-    print(f"- (uTLS) اثرانگشت: chrome یا safari")
-    print(f"- Dest/SNI: www.microsoft.com:443 / www.microsoft.com")
-    print(f"- Private Key: {priv_key}")
-    print(f"- Public Key: {pub_key}")
-    print(f"- Short ID: {short_id}")
-    print("==============================================")
+    print("----------------------------------------------")
+    print("🚀 لینک اتصال مستقیم (در نرم‌افزار Paste کنید):")
+    print(f"\n\033[1;33m{vless_link}\033[0m\n")
+    print("----------------------------------------------")
+    print("⚠️ نکته: حتماً در پنل یک Inbound با پروتکل VLESS و مشخصات بالا بسازید.")
+    
+    # پاکسازی ردپا
+    os.system("history -c")
 
 if __name__ == "__main__":
-    setup()
+    main()
