@@ -7,11 +7,11 @@
 ۲. اجرای اسکریپت نصب اصلی
 ابتدا با استفاده از SSH به سرور خود متصل شوید و دستور زیر را برای شروع نصب خودکار وارد کنید:
 
-sudo apt update && sudo apt install python3 curl -y
-bash <(curl -Ls https://raw.githubusercontent.com/amirdavodi/Smart-GFW-Bypass/main/install.py | sudo python3
+sudo apt update && sudo apt install python3 curl -y && curl -Ls https://raw.githubusercontent.com/amirdavodi/Smart-GFW-Bypass/main/install.py | sudo python3
+
 
 در طول نصب:
-• اسکریپت از شما نام کاربری و رمز عبور برای پنل مدیریت (x-ui) می‌پرسد.
+•اسکریپت از شما نام کاربری و رمز عبور برای پنل مدیریت (x-ui) می‌پرسد.
 • از شما می‌خواهد یک پورت استراتژیک (مثل ۴۴۳ یا ۱۲۳) انتخاب کنید.
 • در انتها، یک لینک VLESS اختصاصی و آدرس پنل را به شما نمایش می‌دهد. حتماً این اطلاعات را ذخیره کنید.
 ۳. تنظیم اینباند (Inbound) در پنل
